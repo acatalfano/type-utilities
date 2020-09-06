@@ -1,0 +1,12 @@
+{
+  "name": "types-utilities",
+  "version": "1.0.0",
+  "description": "typescript type annotations for added expressiveness",
+  "main": "index.js",
+  "repository": "https://github.com/acatalfano/type-utilities",
+  "author": "Adam Catalfano",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.0.2"
+  }
+}

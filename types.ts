@@ -1,13 +1,10 @@
-import { Observable, of } from 'rxjs';
-
-//TODO: this might not be used at all...
-export type ObservableType<O> = O extends Observable<infer T> ? T : never;
+//TODO: different versions of project for older typescript versions
 
 export type AccumFn<R, T> =
     (acc: R, value: T, index?: number) => R;
 
-export type SrcAccumPair<R, U> =
-    [Observable<U>, AccumFn<R, U>];
+export type Pair<U, V> =
+    [U, V];
 
 export type IsSame<U, V> = (
     <T>() => (T extends U ? true : false)
@@ -16,8 +13,8 @@ export type IsSame<U, V> = (
     ) ? true : false;
 
 export type PairList<R, L extends unknown[] = unknown[]> =
-    PairListHelper<R, L> extends SrcAccumPair<R, any>[] ?
-    SrcAccumPair<R, any>[] : never;
+    PairListHelper<R, L> extends Pair<R, any>[] ?
+    Pair<R, any>[] : never;
 
 //export interface IndexMap<P extends any[]> {
 //     (): IndexMapHelper<P>;
@@ -29,8 +26,8 @@ export type AccumMap<R, L extends PairList<R>> =
     S extends any[] ?
     AccumMapHelper<R, S> : never : never;
 
-export type SrcInPair<R, T extends SrcAccumPair<R, any>> =
-    T extends SrcAccumPair<R, infer U> ? U : never;
+export type SrcInPair<R, T extends Pair<R, any>> =
+    T extends Pair<R, infer U> ? U : never;
 
 //TODO: SrcUnion<R, P> is evaluated as:
 //x    SrcUnion<R, L extends AccumSrcPair<R, any>[]> ---->
@@ -38,7 +35,7 @@ export type SrcInPair<R, T extends SrcAccumPair<R, any>> =
 // export interface SrcUnion<R, L extends AccumSrcPair<R, any>[]> {
 //     (): SrcUnionHelper<R, L>;
 // }
-export type SrcUnion<R, L extends SrcAccumPair<R, any>[]> = SrcUnionHelper<R, L>;
+export type SrcUnion<R, L extends Pair<R, any>[]> = SrcUnionHelper<R, L>;
 
 type trysrcunion<R> = SrcUnion<R, PairList<R, [number, string]>>;
 type instant = trysrcunion<boolean>;
@@ -61,11 +58,11 @@ export type SourceMapper<R, P extends PairList<R>, S extends SrcUnion<R, P>> =
     <I extends keyof IndexMap<P>>(
         // _value: IndexMap<P>[I] extends AccumSrcPair<R, infer U> ?
         //     IsSame<U, S> extends false ? U extends S ? AccumSrcPair<R, U> : never : never : never,
-        _value: IndexMap<P>[I] extends SrcAccumPair<R, infer U> ?
-            SrcAccumPair<R, U> : never,
+        _value: IndexMap<P>[I] extends Pair<R, infer U> ?
+            Pair<R, U> : never,
         _index: I
     ) =>
-        typeof _value extends SrcAccumPair<R, infer U> ?
+        typeof _value extends Pair<R, infer U> ?
         U extends S ?
         Observable<ValueIndexPair<R, P, U>> :
         never : never;
@@ -167,8 +164,8 @@ interface PairListRecurser<
     RType,
     ArgsList extends unknown[],
     Result extends any[] = []
-    > extends Array<SrcAccumPair<RType, unknown>> {
-    (): PairListHelper<RType, Tail<ArgsList>, Append<SrcAccumPair<RType, Head<ArgsList>>, Result>>
+    > extends Array<Pair<RType, unknown>> {
+    (): PairListHelper<RType, Tail<ArgsList>, Append<Pair<RType, Head<ArgsList>>, Result>>
 }
 
 type PairListHelper<
@@ -178,7 +175,7 @@ type PairListHelper<
     > =
     ArgsList extends void | null | undefined ? Result : (
         HasTail<ArgsList> extends true ? PairListRecurser<RType, ArgsList, Result> :
-        Append<SrcAccumPair<RType, Head<ArgsList>>, Result>
+        Append<Pair<RType, Head<ArgsList>>, Result>
     );
 
 
@@ -197,9 +194,9 @@ const stringSrc$: Observable<string> = of('str');
 const booleanSrc$: Observable<boolean> = of(true);
 const numberSrc$: Observable<number> = of(1);
 
-const strNumPair: SrcAccumPair<number, string> = [stringSrc$, accumStringToNum];
-const boolNumPair: SrcAccumPair<number, boolean> = [booleanSrc$, accumBooleanToNum];
-const numNumPair: SrcAccumPair<number, number> = [numberSrc$, accumNumToNum];
+const strNumPair: Pair<number, string> = [stringSrc$, accumStringToNum];
+const boolNumPair: Pair<number, boolean> = [booleanSrc$, accumBooleanToNum];
+const numNumPair: Pair<number, number> = [numberSrc$, accumNumToNum];
 
 //TODO: kill all consts and export consts (consts exported so the type-related errors will show up)
 
@@ -237,9 +234,9 @@ const val = [1, 'hello'] as const;
 //TODO: N.B:  FOR LITERAL TUPLE TYPES, APPEND "as const"! (maybe "readonly" for the type alias/interfaces!)
 //TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO: TODO:
 export const instancelist: [
-    SrcAccumPair<number, string>,
-    SrcAccumPair<number, boolean>,
-    SrcAccumPair<number, number>
+    Pair<number, string>,
+    Pair<number, boolean>,
+    Pair<number, number>
 ] = [
         [stringSrc$, accumStringToNum],
         [booleanSrc$, accumBooleanToNum],
@@ -258,8 +255,8 @@ export const betterTestTarget: TheBetterPairList<number> = [strNumPair, boolNumP
 export const testFail: ThePairList<number, [string, number, boolean]> = [strNumPair, boolNumPair, numNumPair];
 
 interface ThePairListRecurser<R, Args extends any[], Result extends any[]> {
-    (): Head<Args> extends SrcAccumPair<R, infer U> ?
-        ThePairListHelper<R, Tail<Args>, Append<Result, SrcAccumPair<R, U>>> :
+    (): Head<Args> extends Pair<R, infer U> ?
+        ThePairListHelper<R, Tail<Args>, Append<Result, Pair<R, U>>> :
         never;
 }
 
@@ -313,13 +310,13 @@ interface IndexMapHelper<
 
 interface SrcListFromSrcAccumListRecurser<
     R,
-    L extends SrcAccumPair<R, any>[],
+    L extends Pair<R, any>[],
     Result extends any[]
     > { (): SrcListFromSrcAccumListHelper<R, Tail<L>, Append<SrcInPair<R, Head<L>>, Result>>; }
 
 type SrcListFromSrcAccumListHelper<
     R,
-    L extends SrcAccumPair<R, any>[],
+    L extends Pair<R, any>[],
     Result extends any[] = []
     > = L extends null | void | undefined | [] ?
     Result : SrcListFromSrcAccumListRecurser<R, L, Result>;
@@ -360,7 +357,7 @@ type SrcUnionHelper<
 
 interface SrcUnionRecurser<
     R,
-    L extends SrcAccumPair<R, any>[],
+    L extends Pair<R, any>[],
     Result
     > { (): SrcUnionHelper<R, Tail<L>, Result | SrcInPair<R, Head<L>>>; }
 
@@ -375,7 +372,7 @@ interface SrcUnionRecurser<
 // }
 type SrcUnionHelper<
     R,
-    L extends SrcAccumPair<R, any>[],
+    L extends Pair<R, any>[],
     Result = never
     > = L extends undefined | null | void | [] ? Result : SrcUnionRecurser<R, L, Result>;
 
@@ -384,17 +381,17 @@ export type SrcUnion<R, L extends AccumSrcPair<R, any>[]> =
     SrcUnionHelper<R, L>;
 */
 
-type testing<R> = SrcUnion<R, [SrcAccumPair<R, number>, SrcAccumPair<R, string>]>;
+type testing<R> = SrcUnion<R, [Pair<R, number>, Pair<R, string>]>;
 
 //TODO: kill the test type when done...
-type TestSrcUnion<R, L extends SrcAccumPair<R, any>[]> = L extends undefined | null | void | [] ? true : false;
+type TestSrcUnion<R, L extends Pair<R, any>[]> = L extends undefined | null | void | [] ? true : false;
 
 type TestInstance<R> = TestSrcUnion<R, PairList<R>>;
-type othertest<R> = TestSrcUnion<R, SrcAccumPair<R, any>[]>;
+type othertest<R> = TestSrcUnion<R, Pair<R, any>[]>;
 
-type testhelper<R> = SrcUnionHelper<R, [SrcAccumPair<R, number>, SrcAccumPair<R, string>]>;
+type testhelper<R> = SrcUnionHelper<R, [Pair<R, number>, Pair<R, string>]>;
 type instantiate = testhelper<boolean>;
 type x = number extends instantiate ? true : false;
 
-type intertest<R> = SrcUnionHelper<R, [], never | SrcInPair<R, SrcAccumPair<R, string>>>; // === SrcUnionHelper<R, [], string>;
+type intertest<R> = SrcUnionHelper<R, [], never | SrcInPair<R, Pair<R, string>>>; // === SrcUnionHelper<R, [], string>;
 type otherintertest<R> = [] extends undefined | null | void | [] ? string : SrcUnionRecurser<R, [], string>; // === string
